@@ -1,7 +1,7 @@
 Phingento
 =========
 
-Magento Development and Deployment Toolkit using Phing.
+Magento Development and Deployment Toolkit using Phing.  This can be used out of the box or modified to meet your needs.
 
 Features:
 * Packages and deploys magento to multiple servers reliably and securely.
@@ -27,38 +27,44 @@ Project Configuration
 
 The following properties in build.properties control various aspects of the development and deploy process.
 
-* project.magento.edition: Which magento edition is this based from (enterprise|professional|community)
-* project.magento.version: What version of the magento edition.  These project.magento properties determine which tar file
-    is used to in the rebuild and package targets.
-* project.git.remote: Git repository URL for the project, used when building the deploy package.
-* project.libs: A comma separated list of directories from the shared library repository to include when rebuilding, relinking
+* __project.magento.edition:__ Which magento edition is this based from (enterprise|professional|community)
+
+* __project.magento.version:__ What version of the magento edition.  These project.magento properties determine which tar file
+    is used to in the rebuild and package targets.  You can configure where these archives live by setting magento.archive.dir.
+
+* __project.git.remote:__ Git repository URL for the project, used when building the deploy package.
+
+* __project.libs:__ A comma separated list of directories from the shared library repository to include when rebuilding, relinking
     and deploying.
-* project.libs.devlibs: A comma separated list of directories from the shared library repository to include when rebuilding, relinking
+
+* __project.libs.devlibs:__ A comma separated list of directories from the shared library repository to include when rebuilding, relinking
     BUT NOT when deploying.
-* project.libs.branch: The branch from the shared library repository to pull shared code from.
+
+* __project.libs.branch:__ The branch from the shared library repository to pull shared code from.
 
 The following properties determine how environments are set up for deployment and backup.  By default develop, alpha, beta, and live
 environment targets are set up.  To add or remove environments you can edit phing/build.xml.
 
-* deploy.username:  A user on all deployment servers which has permissions to deploy the application.  Highly recommended
- to set this to ${phing.project.name}.
+* __deploy.username:__  A user on all deployment servers which has permissions to deploy the application.  Highly recommended
+ to set this to ${phing.project.name}.  Can be overridden via deploy.[environment].username.
 
-* deploy.[environment].host: A comma separate list of servers to deploy to.
+* __deploy.[environment].host:__ A comma separate list of servers to deploy to.
 
-* deploy.[environment].password: The password for the deploy.username.  If omitted the authentication will be handled with openssh
-    public/private keys. The recommended approach would be to use public / private keys.
+* __deploy.[environment].password:__ The password for the deploy.username.  If omitted the authentication will be handled with openssh
+    public/private keys. You really shouldn't store passwords in plain text.
 
-* deploy.[environment].branch: The git branch to deploy from.
+* __deploy.[environment].branch:__ The git branch to deploy from.
 
 Server Setup
 ------------
 
 1. Copy files in the server directory to all deployment servers.
 2. Modify the backup script to include correct database connection information.
+3. Create one or more users with the same name as each project deployed on the server.
 
 Development Targets
 -----------------
-* setup_apache/setup_nginx:  Sets up host file, and Apache/nginx config for the project.
+* __setup_apache/setup_nginx:__  Sets up host file, and Apache/nginx config for the project.
     Unlike the other tasks this must be run with root permissions.
     After setting up Apache or nginx the project will be accessible from http://projectname.yourhostname.com/.  In the
     build.properies file for the project you can define project.runcodes (comma separated), and project.runtype.  These
@@ -66,18 +72,19 @@ Development Targets
     In that case the default store will be available at http://projectname.yourhostname.com/ while the other websites will be available
     at http://projectname-runcode.yourhostname.com/.
 
-* rebuild: Creates the Magento runtime directory and lib directory (projectname_mage, projectname_lib), applies patch files
+* __rebuild:__ Creates the Magento runtime directory and lib directory (projectname_mage, projectname_lib), applies patch files
     located in the project root, and then runs relink.  The lib directory is for code completion in your ide (add as a
     External Library in PhpStorm), while the runtime directory (projectname_mage) is the directory that actually runs your magento code.
 
-* relink: Deletes all symlinks in the project runtime directory (projectname_mage), and then symlinks in all custom code,
-    the media directory, and var/sessions into the runtime directory.
+* __relink:__ Deletes all symlinks in the project runtime directory (projectname_mage), and then symlinks in all custom code,
+    the media directory, and var/sessions into the runtime directory.  In the course of the development process you will
+    need to run relink to see new modules, themes, skins, and locale files.
 
-* flush_cache:  Clears the magento filesystem cache.
+* __flush_cache:__  Clears the magento filesystem cache.
 
-* development/beta/live_backup: Creates an archive with media, local.xml, and database dumps from the specified environment.
+* __development/beta/live_backup:__ Creates an archive with media, local.xml, and database dumps from the specified environment.
 
-* compass_watch: Starts [compass] (http://compass-style.org/) watcher in all compass enabled skin directories.
+* __compass_watch:__ Starts [compass] (http://compass-style.org/) watcher in all compass enabled skin directories.
 
 Shared Code
 -----------
