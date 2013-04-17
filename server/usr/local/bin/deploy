@@ -1,0 +1,126 @@
+#!/bin/bash
+# Deploys magento for this project from an archive located at /tmp/[PROJECT]_[ENVIRONMENT].tar.gz
+# The assumption is that PROJECT is the current user this script is run as.
+# extracts the archive into a dated directory and then moves the ENVIRONMENT symlink to the dated dir
+# app/etc/local.xml and .htaccess are copied from the old dir to the new and media and var directories are symlinked in
+# Example: deploy [ENVIRONMENT] [MD5HASH]
+
+if [ -z $1 ]; then
+    echo "You must provide the environment (directory) to deploy to."
+    exit 1
+else
+    ENVIRONMENT=$1
+fi
+
+PROJECT=$USER
+MD5SUM=$2
+
+ARCHIVE=/tmp/"$PROJECT"_"$ENVIRONMENT".tar.gz
+if [ ! -f $ARCHIVE ]; then
+    echo "Deploy failed, archive not found."
+    exit 1
+fi
+
+if [ ! -z $MD5SUM ]; then
+    CURRENTMD5=($(md5sum $ARCHIVE))
+    if [ $MD5SUM != $CURRENTMD5 ]; then
+        echo "MD5 sum mismatch, possible archive corruption, aborting."
+        exit 1
+    fi
+    echo "MD5 sum verified"
+fi
+
+TMP_DIR=~/tmp_"$ENVIRONMENT"
+rm -rf $TMP_DIR
+mkdir $TMP_DIR
+
+#move media and var to beta/live_media (only run when transitioning to symlinked dirs)
+if [ ! -d ~/"$ENVIRONMENT"_media ]; then
+    cp -arf ~/$ENVIRONMENT/media ~/"$ENVIRONMENT"_media
+    echo "Copied media directory."
+fi
+
+if [ ! -d ~/"$ENVIRONMENT"_var ]; then
+    cp -arf ~/$ENVIRONMENT/var ~/"$ENVIRONMENT"_var
+    echo "Copied var directory."
+fi
+
+#save local.xml and enterprise.xml to preserve db connection and caching settings
+if [ -f ~/$ENVIRONMENT/app/etc/local.xml ]; then
+    cp -f ~/$ENVIRONMENT/app/etc/local.xml $TMP_DIR
+fi
+if [ -f ~/$ENVIRONMENT/app/etc/enterprise.xml ]; then
+    cp -f ~/$ENVIRONMENT/app/etc/enterprise.xml $TMP_DIR
+fi
+
+#save .htaccess as it may contain rules to switch stores etc...
+if [ -f ~/$ENVIRONMENT/.htaccess ]; then
+    cp -f ~/$ENVIRONMENT/.htaccess $TMP_DIR
+fi
+
+#create deployment dir
+DEPLOY_DIR="$ENVIRONMENT"_`date +%F_%H%M`
+mkdir ~/$DEPLOY_DIR
+
+tar xmf $ARCHIVE -C ~/$DEPLOY_DIR
+echo "Extracted archive."
+
+#these only apply if the project has been deployed before
+if [ -d $ENVIRONMENT ]; then
+    #copy in saved files into the new directory
+    if [ -f $TMP_DIR/local.xml ]; then
+        cp -f $TMP_DIR/local.xml ~/$DEPLOY_DIR/app/etc
+    else
+        echo "Missing local.xml, aborting."
+        exit 1
+    fi
+    if [ -f $TMP_DIR/.htaccess ]; then
+        cp -f $TMP_DIR/.htaccess ~/$DEPLOY_DIR/
+    else
+        echo "Missing .htaccess, aborting."
+        exit 1
+    fi
+    if [ -f $TMP_DIR/enterprise.xml ]; then
+        cp -f $TMP_DIR/enterprise.xml ~/$DEPLOY_DIR/app/etc
+    fi
+
+    #symlink in var and media
+    if [ -d ~/"$ENVIRONMENT"_media ]; then
+        if [ -d ~/$DEPLOY_DIR/media ]; then
+            rm -rf ~/$DEPLOY_DIR/media
+        fi
+        ln -s ~/"$ENVIRONMENT"_media ~/$DEPLOY_DIR/media
+    else
+        echo "Missing media directory, aborting."
+        exit 1
+    fi
+    if [ -d ~/"$ENVIRONMENT"_var ]; then
+        if [ -d ~/$DEPLOY_DIR/var ]; then
+            rm -rf ~/$DEPLOY_DIR/var
+        fi
+        ln -s ~/"$ENVIRONMENT"_var ~/$DEPLOY_DIR/var
+    else
+        echo "Missing var directory, aborting."
+        exit 1
+    fi
+fi
+
+#chmod var and media so apache can read and write
+find ~/$DEPLOY_DIR/var -type d -exec chmod 777 {} +
+find ~/$DEPLOY_DIR/var -type f -exec chmod 666 {} +
+find ~/$DEPLOY_DIR/media -type d -exec chmod 777 {} +
+find ~/$DEPLOY_DIR/media -type f -exec chmod 666 {} +
+
+#chmod cron.sh so it can be run
+chmod +x ~/$DEPLOY_DIR/cron.sh
+
+#move the target symlink
+if [ -e ~/$ENVIRONMENT ]; then
+    rm -rf ~/$ENVIRONMENT
+fi
+ln -s ~/$DEPLOY_DIR ~/$ENVIRONMENT
+
+rm -f $ARCHIVE
+rm -rf $TMP_DIR
+
+echo "Deployment Complete!"

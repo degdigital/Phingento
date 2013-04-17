@@ -1,0 +1,37 @@
+#!/bin/bash
+# Creates a tarball with the projects current media folder and a database dump
+# Must be edited to supply database connection information
+# Example: backup environment
+
+if [ -z $1 ]; then
+    echo "you must provide the name of the environment to backup"
+    exit 1
+else
+    ENVIRONMENT=$1
+fi
+
+PROJECT=$USER
+
+BACKUP_NAME="$PROJECT"_"$ENVIRONMENT"
+
+if [ -d /tmp/$BACKUP_NAME ]; then
+    rm -rf /tmp/$BACKUP_NAME
+fi
+mkdir /tmp/$BACKUP_NAME
+
+cp -arf ~/"$ENVIRONMENT"_media /tmp/$BACKUP_NAME
+cp ~/$ENVIRONMENT/app/etc/local.xml /tmp/$BACKUP_NAME
+
+mysqldump --user=root --password=Password --add-locks --disable-keys $PROJECT > /tmp/$BACKUP_NAME/$PROJECT.sql
+
+cd /tmp/
+
+if [ -e /tmp/"$BACKUP_NAME"_backup.tar.gz ]; then
+    rm -f /tmp/"$BACKUP_NAME"_backup.tar.gz
+fi
+
+tar czf /tmp/"$BACKUP_NAME"_backup.tar.gz $BACKUP_NAME
+
+BACKUP_SIZE=$(ll -h /tmp/"$BACKUP_NAME"_backup.tar.gz | awk '{ print $5 }' | tail -1)
+
+echo "Backup Complete - $BACKUP_SIZE"
