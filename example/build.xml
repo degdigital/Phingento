@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<!--
+Include this file in your magento project root
+Specify the name of your project here
+-->
+<project name="project_name" default="relink">
+    <property name="workspace" value=".."/>
+    <property name="magento_phing_tools" value="${workspace}/Phingento/phing"/>
+    <import file="${magento_phing_tools}/build.xml"/>
+</project>

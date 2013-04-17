@@ -1,0 +1,98 @@
+<?xml version="1.0"?>
+<project name="package" default="package">
+    <property name="temp_path" value="/tmp/${project.name}"/>
+    <property name="git.local" value="${temp_path}/git"/>
+
+    <target name="create_temp">
+        <delete dir="${temp_path}"/>
+        <mkdir dir="${git.local}"/>
+    </target>
+
+    <target name="package" depends="create_temp">
+        <if>
+            <not><available file="${magento.archive.file}"/></not>
+            <then>
+                <fail message="Magento archive ${magento.archive.file} does not exist"/>
+            </then>
+        </if>
+
+        <exec command="tar xzf ${magento.archive.file} -C ${temp_path}" checkreturn="true"/>
+
+        <gitclone repository="${project.git.remote}" targetpath="${git.local}"/>
+
+        <!-- add environment to package name if run for deploy -->
+        <if>
+            <isset property="deploy.environment"/>
+            <then>
+                <property name="package_file_name" value="${project.name}_${deploy.environment}.tar.gz"/>
+                <if>
+                    <isset property="deploy.${deploy.environment}.branch"/>
+                    <then>
+                        <property name="git.branch" value="${deploy.${deploy.environment}.branch}"/>
+                    </then>
+                </if>
+            </then>
+            <else>
+                <property name="package_file_name" value="${project.name}.tar.gz"/>
+            </else>
+        </if>
+
+        <if>
+            <isset property="git.branch"/>
+            <then>
+                <gitcheckout repository="${git.local}" branchname="${git.branch}"/>
+            </then>
+        </if>
+
+        <phing buildfile="${libs}" target="include-libs" haltonfailure="true">
+            <property name="symlink" value="false"/>
+        </phing>
+
+        <if>
+            <available file="${git.local}/skin/frontend" type="dir"/>
+            <then>
+                <foreach target="compile-css" param="configfile" absparam="configfilepath">
+                    <fileset dir="${git.local}/skin/frontend" expandsymboliclinks="true" >
+                        <include name="**/config.rb"/>
+                    </fileset>
+                </foreach>
+            </then>
+        </if>
+
+        <copy todir="${temp_path}/magento" overwrite="true" preservelastmodified="true">
+            <fileset dir="${git.local}">
+                <exclude name=".git**"/>
+                <exclude name=".idea**"/>
+                <exclude name="build**"/>
+                <exclude name="app/etc/local.xml"/>
+                <exclude name="**.gitignore"/>
+                <exclude name="**/config.rb"/>
+                <exclude name="**/*.scss"/>
+                <exclude name="**/.sass-cache/**"/>
+            </fileset>
+        </copy>
+
+        <!-- Apply any checked in .patch to the magento root dir -->
+        <foreach target="apply_patch" param="patch" absparam="abspatch">
+            <fileset dir="${temp_path}/magento">
+                <include name="*.patch"/>
+            </fileset>
+        </foreach>
+
+        <property name="exclusions" value="--exclude=app/etc/local.xml --exclude=*.patch --exclude=LICENSE* --exclude=RELEASE_NOTES.txt --exclude=install.php"/>
+
+        <exec dir="${temp_path}/magento" checkreturn="true" command="tar czf ../${package_file_name} ${exclusions} *"/>
+    </target>
+
+    <target name="apply_patch">
+        <patch patchfile="${abspatch}" dir="${temp_path}/magento" strip="0" haltonfailure="true"/>
+    </target>
+
+    <target name="compile-css">
+        <php function="dirname" returnProperty="skin">
+            <param value="${configfilepath}"/>
+        </php>
+
+        <exec dir="${skin}" command="compass compile --output-style compressed --force" logoutput="true" checkreturn="true"/>
+    </target>
+</project>

@@ -1,0 +1,111 @@
+<?xml version="1.0"?>
+<!--
+This build file does some initialization and contains the targets which are actually run during development and deployment.
+-->
+<project name="magento_tools" default="relink">
+    <php function="dirname" returnProperty="magento_tools">
+        <param value="${phing.file.magento_tools}"/>
+    </php>
+
+    <tstamp/>
+
+    <!-- load the per-project build properties file -->
+    <property file="build.properties"/>
+
+    <fail unless="workspace" message="The workspace property MUST be set"/>
+    <fail unless="project.magento.edition" message="The project.magento.edition property MUST be set"/>
+    <fail unless="project.magento.version" message="The project.magento.version property MUST be set"/>
+    <fail unless="project.git.remote" message="The project.git.remote property MUST be set"/>
+
+    <!-- load the cross project default properties file -->
+    <property file="${magento_tools}/default.properties"/>
+
+    <resolvepath propertyName="workspace" file="${workspace}"/>
+
+    <includepath classpath="${magento_tools}/classes/"/>
+    <taskdef name="advanced-symlink" classname="AdvancedSymlinkTask"/>
+
+    <property name="package" value="${magento_tools}/package.xml"/>
+    <property name="remote" value="${magento_tools}/remote.xml"/>
+    <property name="development" value="${magento_tools}/development.xml"/>
+    <property name="libs" value="${magento_tools}/libs.xml"/>
+    <property name="project.name" value="${phing.project.name}"/>
+    <property name="project.magedir" value="${workspace}/${project.name}_mage"/>
+    <property name="magento.archive.file" value="${magento.archive.dir}/${project.magento.edition}-${project.magento.version}.${magento.archive.extension}"/>
+
+    <!-- Development targets -->
+    <target name="setup_apache">
+        <phing buildfile="${development}" target="setup-apache" haltonfailure="true"/>
+    </target>
+    <target name="setup_nginx">
+        <phing buildfile="${development}" target="setup-nginx" haltonfailure="true"/>
+    </target>
+    <target name="rebuild">
+        <phing buildfile="${development}" target="reset" haltonfailure="true"/>
+        <exec command="rm -rf ${workspace}/${project.name}_lib"/>
+        <exec command="cp -r ${project.magedir} ${workspace}/${project.name}_lib" checkreturn="true"/>
+        <phing buildfile="${development}" target="relink" haltonfailure="true"/>
+        <phing buildfile="${development}" target="flush-cache" haltonfailure="true"/>
+    </target>
+    <target name="relink">
+        <phing buildfile="${development}" target="clear-symlinks" haltonfailure="true"/>
+        <phing buildfile="${libs}" target="link-libs"/>
+        <phing buildfile="${development}" target="relink" haltonfailure="true"/>
+        <phing buildfile="${development}" target="flush-cache"/>
+    </target>
+    <target name="flush_cache">
+        <phing buildfile="${development}" target="flush-cache" haltonfailure="true"/>
+    </target>
+    <target name="compass_watch">
+        <phing buildfile="${development}" target="compass-watch" haltonfailure="true"/>
+    </target>
+
+    <!-- Develop targets -->
+    <target name="deploy_develop">
+        <property name="deploy.environment" value="develop"/>
+        <phing buildfile="${package}" target="package" haltonfailure="true"/>
+        <phing buildfile="${remote}" target="develop-deploy" haltonfailure="true"/>
+    </target>
+    <target name="backup_develop">
+        <property name="deploy.environment" value="develop"/>
+        <phing buildfile="${remote}" target="develop-backup" haltonfailure="true"/>
+    </target>
+
+    <!-- Alpha targets -->
+    <target name="deploy_alpha">
+        <property name="deploy.environment" value="alpha"/>
+        <phing buildfile="${package}" target="package" haltonfailure="true"/>
+        <phing buildfile="${remote}" target="alpha-deploy" haltonfailure="true"/>
+    </target>
+    <target name="backup_alpha">
+        <property name="deploy.environment" value="alpha"/>
+        <phing buildfile="${remote}" target="alpha-backup" haltonfailure="true"/>
+    </target>
+
+    <!-- Beta targets -->
+    <target name="deploy_beta">
+        <property name="deploy.environment" value="beta"/>
+        <phing buildfile="${package}" target="package" haltonfailure="true"/>
+        <phing buildfile="${remote}" target="beta-deploy" haltonfailure="true"/>
+    </target>
+    <target name="backup_beta">
+        <property name="deploy.environment" value="beta"/>
+        <phing buildfile="${remote}" target="beta-backup" haltonfailure="true"/>
+    </target>
+
+    <!-- Live targets -->
+    <target name="deploy_live">
+        <property name="deploy.environment" value="live"/>
+        <phing buildfile="${package}" target="package" haltonfailure="true"/>
+        <phing buildfile="${remote}" target="live-deploy" haltonfailure="true"/>
+    </target>
+    <target name="backup_live">
+        <property name="deploy.environment" value="live"/>
+        <phing buildfile="${remote}" target="live-backup" haltonfailure="true"/>
+    </target>
+
+    <target name="package">
+        <property name="package.file" value="${workspace}/${project.name}-${DSTAMP}-${TSTAMP}.tar.gz"/>
+        <phing buildfile="${package}" target="package" haltonfailure="true"/>
+    </target>
+</project>

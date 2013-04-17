@@ -1,0 +1,105 @@
+<?xml version="1.0"?>
+<project name="libs" default="include-libs">
+    <fail unless="project.magedir" message="The project.magedir property MUST be set"/>
+    <fail unless="workspace" message="The workspace property MUST be set"/>
+    <fail unless="project.libs.remote" message="The project.libs.remote property MUST be set"/>
+
+    <target name="link-libs">
+        <phingcall target="include-libs">
+            <property name="symlink" value="true"/>
+        </phingcall>
+        <if>
+            <isset property="project.libs.devlibs"/>
+            <then>
+                <property name="project.libs" value="${project.libs.devlibs}" override="true"/>
+                <phingcall target="include-libs">
+                    <property name="symlink" value="true"/>
+                </phingcall>
+            </then>
+        </if>
+    </target>
+
+    <target name="include-libs">
+        <if>
+            <isset property="project.libs"/>
+            <then>
+                <if>
+                    <not>
+                        <isset property="project.libs.branch"/>
+                    </not>
+                    <then>
+                        <property name="project.libs.branch" value="master"/>
+                    </then>
+                </if>
+                <if>
+                    <istrue value="${symlink}"/>
+                    <then>
+                        <property name="project.libs.dir" value="${workspace}/magento_libs/${project.libs.branch}"/>
+                    </then>
+                    <else>
+                        <property name="project.libs.dir" value="${temp_path}/libs"/>
+                    </else>
+                </if>
+
+                <mkdir dir="${project.libs.dir}"/>
+                <if>
+                    <not>
+                        <available file="${project.libs.dir}/.git/config" type="file"/>
+                    </not>
+                    <then>
+                        <gitclone repository="${project.libs.remote}" targetPath="${project.libs.dir}"/>
+                        <gitcheckout repository="${project.libs.dir}" branchname="${project.libs.branch}"/>
+                    </then>
+                    <else>
+                        <trycatch>
+                            <try>
+                                <gitpull repository="${project.libs.dir}" />
+                            </try>
+                            <catch>
+                                <echo level="warning">Git pull failed, your project may not be using the latest libs.</echo>
+                            </catch>
+                        </trycatch>
+                    </else>
+                </if>
+
+                <foreach list="${project.libs}" target="include-lib" param="library"/>
+            </then>
+        </if>
+    </target>
+
+    <target name="include-lib">
+        <if>
+            <not><available file="${project.libs.dir}/${library}" type="dir"/></not>
+            <then>
+                <fail message="${library} is not available in Magento Libs"/>
+            </then>
+        </if>
+        <if>
+            <istrue value="${symlink}"/>
+            <then>
+                <resolvepath propertyName="magedir" path="${project.magedir}"/>
+                <advanced-symlink link="${magedir}">
+                    <fileset dir="${project.libs.dir}/${library}">
+                        <include name="*.php"/>
+                        <include name="js/*"/>
+                        <include name="lib/**"/>
+                        <include name="shell/*"/>
+                        <include name="errors/*"/>
+                        <include name="app/code/*/*/*"/>
+                        <include name="app/locale/*/**"/>
+                        <include name="app/etc/modules/*.xml"/>
+                        <include name="skin/frontend/*/**"/>
+                        <include name="skin/adminhtml/*/**"/>
+                        <include name="app/design/frontend/*/*/*/**"/>
+                        <include name="app/design/adminhtml/*/*/*/**"/>
+                    </fileset>
+                </advanced-symlink>
+            </then>
+            <else>
+                <copy todir="${temp_path}/magento">
+                    <fileset dir="${project.libs.dir}/${library}"/>
+                </copy>
+            </else>
+        </if>
+    </target>
+</project>

@@ -1,0 +1,132 @@
+<?xml version="1.0"?>
+<project name="development" default="flush-cache">
+    <fail unless="project.magedir" message="The project.magedir property MUST be set"/>
+
+    <target name="reset">
+        <fail unless="magento.archive.file" message="The magento.archive.file property MUST be set"/>
+        <exec command="rm -rf ${project.magedir}/var"/>
+        <delete dir="${project.magedir}"/>
+        <mkdir dir="${project.magedir}"/>
+        <exec dir="${project.magedir}" checkreturn="true" command="tar --strip-components 1 -xf ${magento.archive.file}" logoutput="true"/>
+        <foreach target="apply-patch" param="patch.path" absparam="patch.abspath">
+            <fileset dir="${project.basedir}">
+                <include name="*.patch"/>
+            </fileset>
+        </foreach>
+
+        <phing buildfile="${libs}" target="link-libs"/>
+
+        <chmod file="${project.magedir}/var" mode="777"/>
+    </target>
+
+    <target name="relink">
+        <resolvepath propertyName="magedir" path="${project.magedir}"/>
+        <delete dir="${magedir}/media" />
+        <advanced-symlink link="${magedir}">
+            <fileset dir="${project.basedir}">
+                <include name="js/*"/>
+                <include name="lib/**"/>
+                <include name="shell/*"/>
+                <include name="errors/*"/>
+                <include name="app/code/*/*/*"/>
+                <include name="app/locale/*/**"/>
+                <include name="app/etc/modules/*.xml"/>
+                <include name="skin/frontend/*/**"/>
+                <include name="skin/adminhtml/*/**"/>
+                <include name="app/design/frontend/*/*/*/**"/>
+                <include name="app/design/adminhtml/*/*/*/**"/>
+                <include name="media"/>
+                <include name="var/session"/>
+                <include name="robots.txt"/>
+                <include name="lbcheck.html"/>
+                <include name="app/etc/local.xml"/>
+                <include name="app/etc/local.xml.phpunit"/>
+            </fileset>
+        </advanced-symlink>
+    </target>
+
+    <target name="flush-cache">
+        <exec command="rm -rf '${project.magedir}/var/cache'"/>
+        <exec command="rm -rf '${project.magedir}/var/full_page_cache'"/>
+        <exec command="rm -rf '${project.magedir}/var/phpunit.cache'"/>
+    </target>
+
+    <!-- Sets up hosts file and apache config can only be run as root -->
+    <target name="setup-apache">
+        <taskdef name="domains" classname="DomainsTask"/>
+        <taskdef name="apache-config" classname="ApacheConfigTask"/>
+
+        <property environment="env"/>
+        <property name="project.magento.runcodes" value=""/>
+
+        <!-- update hosts file -->
+        <domains codes="${project.magento.runcodes}" property="hostfile_domains"/>
+        <property name="ip_address" value="127.0.0.1"/>
+        <exec command="echo '${ip_address} ${hostfile_domains}' >> /etc/hosts" checkreturn="true"/>
+
+        <!-- add apache config file -->
+        <apache-config codes="${project.magento.runcodes}" property="apache_config"/>
+        <exec command="echo '${apache_config}' > /etc/httpd/conf.d/${project.name}.conf" checkreturn="true"/>
+        <exec command="/sbin/service httpd restart" checkreturn="true"/>
+    </target>
+
+    <target name="setup-nginx">
+        <taskdef name="domains" classname="DomainsTask"/>
+
+        <property environment="env"/>
+        <property name="project.magento.runcodes" value=""/>
+        <property name="project.magento.runtype" value="store"/>
+
+        <!-- update hosts file -->
+        <domains codes="${project.magento.runcodes}" property="hostfile_domains"/>
+        <property name="ip_address" value="127.0.0.1"/>
+        <exec command="echo '${ip_address} ${hostfile_domains}' >> /etc/hosts" checkreturn="true"/>
+
+        <php function="str_replace" returnProperty="hostname_regexp">
+            <param value="."/>
+            <param value="\."/>
+            <param value="${env.HOSTNAME}"/>
+        </php>
+
+        <php function="preg_replace" returnProperty="project_sanitized">
+            <param value="/[^a-zA-Z0-9.]/"/>
+            <param value=""/>
+            <param value="${project.name}"/>
+        </php>
+
+        <copy file="${magento_tools}/templates/nginx.conf" tofile="/etc/nginx/conf.d/${project.name}.conf" overwrite="true">
+            <filterchain>
+                <replacetokens begintoken="{{" endtoken="}}">
+                    <token key="project" value="${project_sanitized}"/>
+                    <token key="runtype" value="${project.magento.runtype}"/>
+                    <token key="hostname" value="${hostname_regexp}"/>
+                </replacetokens>
+            </filterchain>
+        </copy>
+        <exec command="/sbin/service nginx restart" checkreturn="true"/>
+    </target>
+
+    <target name="compass-watch">
+        <foreach target="compass-watch-run" param="configfile" absparam="configfilepath">
+            <fileset dir="${project.basedir}/skin/frontend" expandsymboliclinks="true">
+                <include name="**/config.rb"/>
+            </fileset>
+        </foreach>
+    </target>
+    <target name="compass-watch-run">
+        <php function="dirname" returnProperty="skin">
+            <param value="${configfilepath}"/>
+        </php>
+        <exec dir="${skin}" command="compass watch" checkreturn="true" spawn="true"/>
+    </target>
+
+    <!-- utility targets -->
+    <target name="apply-patch">
+        <patch patchfile="${patch.abspath}" dir="${project.magedir}" strip="0" haltonfailure="true" />
+    </target>
+
+    <target name="clear-symlinks">
+        <resolvepath propertyName="magedir" path="${project.magedir}"/>
+        <exec dir="${magedir}" command="find -type l -exec rm {} \;"/>
+    </target>
+</project>

@@ -1,0 +1,134 @@
+<?xml version="1.0"?>
+<project name="remote" default="develop-deploy">
+    <property name="temp_path" value="/tmp/${project.name}"/>
+    <property name="git.local" value="${temp_path}/git"/>
+    <property name="deploy.privkeyfile" value="${workspace}/../.ssh/id_rsa"/>
+    <property name="deploy.pubkeyfile" value="${workspace}/../.ssh/id_rsa.pub"/>
+
+    <target name="initialize_environment">
+        <if>
+            <istrue value="${deploy.${deploy.environment}.host}"/>
+            <then>
+                <property name="deploy.host" value="${deploy.${deploy.environment}.host}"/>
+            </then>
+            <else>
+                <fail message="The deploy.${deploy.environment}.host property MUST be set"/>
+            </else>
+        </if>
+
+        <if>
+            <not>
+                <isset property="deploy.username"/>
+            </not>
+            <then>
+                <fail unless="deploy.${deploy.environment}.username" message="The deploy.${deploy.environment}.username property MUST be set"/>
+                <property name="deploy.username" value="${deploy.${deploy.environment}.username}"/>
+            </then>
+        </if>
+
+        <if>
+            <isset property="deploy.${deploy.environment}.port"/>
+            <then>
+                <property name="deploy.port" value="${deploy.${deploy.environment}.port}"/>
+            </then>
+        </if>
+
+        <if>
+            <isset property="deploy.${deploy.environment}.password"/>
+            <then>
+                <property name="deploy.password" value="${deploy.${deploy.environment}.password}"/>
+            </then>
+        </if>
+    </target>
+    <target name="deploy">
+        <property name="deploy.port" value="22"/>
+        <property name="package_file_name" value="${project.name}_${deploy.environment}.tar.gz"/>
+        <filehash file="${temp_path}/${package_file_name}" propertyname="md5hash"/>
+
+        <foreach list="${deploy.host}" target="copy_package_to_host" param="host_name"/>
+        <foreach list="${deploy.host}" target="run_deploy_script_on_host" param="host_name"/>
+    </target>
+    <target name="copy_package_to_host">
+        <if>
+            <isset property="deploy.password"/>
+            <then>
+                <scp host="${host_name}" username="${deploy.username}" password="${deploy.password}"
+                     file="${temp_path}/${package_file_name}" todir="/tmp" port="${deploy.port}" />
+            </then>
+            <else>
+                <scp host="${host_name}" username="${deploy.username}" pubkeyfile="${deploy.pubkeyfile}" privkeyfile="${deploy.privkeyfile}"
+                     file="${temp_path}/${package_file_name}" todir="/tmp" port="${deploy.port}" />
+            </else>
+        </if>
+    </target>
+    <target name="run_deploy_script_on_host">
+        <if>
+            <isset property="deploy.password"/>
+            <then>
+                <ssh host="${host_name}" username="${deploy.username}" password="${deploy.password}"
+                command="deploy ${deploy.environment} ${md5hash}" port="${deploy.port}" property="deploy_output"/>
+            </then>
+            <else>
+                <ssh host="${host_name}" username="${deploy.username}" pubkeyfile="${deploy.pubkeyfile}" privkeyfile="${deploy.privkeyfile}"
+                     command="deploy ${deploy.environment} ${md5hash}" port="${deploy.port}" property="deploy_output"/>
+            </else>
+        </if>
+        <if>
+            <not>
+                <contains string="${deploy_output}" substring="Deployment Complete!"/>
+            </not>
+            <then>
+                <fail message="Remote deploy script failed."/>
+            </then>
+        </if>
+    </target>
+    <target name="complete_deploy">
+        <gittag repository="${git.local}" name="deployed_${deploy.environment}_${DSTAMP}_${TSTAMP}"/>
+        <gitpush repository="${git.local}" tags="true"/>
+        <delete dir="${temp_path}"/>
+    </target>
+
+    <target name="backup">
+        <taskdef name="firstvalue" classname="FirstValueTask"/>
+        <firstvalue property="deploy.host"/>
+
+        <property name="deploy.port" value="22"/>
+        <fail unless="backup.dir" message="You must provide a directory in backup.dir to store backups."/>
+        <if>
+            <not><available file="${backup.dir}" type="dir"/></not>
+            <then>
+                <fail message="${backup.dir} does not exist"/>
+            </then>
+        </if>
+
+        <if>
+            <isset property="deploy.password"/>
+            <then>
+                <ssh host="${deploy.host}" username="${deploy.username}"  password="${deploy.password}"
+                     port="${deploy.port}" command="backup ${deploy.environment}"/>
+                <scp host="${deploy.host}" username="${deploy.username}" password="${deploy.password}"
+                     port="${deploy.port}" todir="${backup.dir}" file="/tmp/${project.name}_${deploy.environment}_backup.tar.gz" fetch="true"/>
+            </then>
+            <else>
+                <ssh host="${deploy.host}" username="${deploy.username}" pubkeyfile="${deploy.pubkeyfile}" privkeyfile="${deploy.privkeyfile}"
+                     port="${deploy.port}" command="backup ${deploy.environment}"/>
+                <scp host="${deploy.host}" username="${deploy.username}" pubkeyfile="${deploy.pubkeyfile}" privkeyfile="${deploy.privkeyfile}"
+                     port="${deploy.port}" todir="${backup.dir}" file="/tmp/${project.name}_${deploy.environment}_backup.tar.gz" fetch="true"/>
+            </else>
+        </if>
+    </target>
+
+    <!-- Hidden targets for build.xml -->
+    <!-- Develop targets -->
+    <target name="develop-deploy" depends="initialize_environment,deploy,complete_deploy"/>
+    <target name="develop-backup" depends="initialize_environment,backup"/>
+    <!-- Alpha targets -->
+    <target name="alpha-deploy" depends="initialize_environment,deploy,complete_deploy"/>
+    <target name="alpha-backup" depends="initialize_environment,backup"/>
+    <!-- Beta targets -->
+    <target name="beta-deploy" depends="initialize_environment,deploy,complete_deploy"/>
+    <target name="beta-backup" depends="initialize_environment,backup"/>
+    <!-- Live targets -->
+    <target name="live-deploy" depends="initialize_environment,deploy,complete_deploy"/>
+    <target name="live-backup" depends="initialize_environment,backup"/>
+</project>
