@@ -123,4 +123,17 @@ ln -s ~/$DEPLOY_DIR ~/$ENVIRONMENT
 rm -f $ARCHIVE
 rm -rf $TMP_DIR
 
+if [[ -x /usr/local/bin/n98-magerun.phar ]]; then
+    cd ~/$ENVIRONMENT
+    n98-magerun.phar cache:flush
+else
+    echo "n98-magerun not installed, flush cache from the admin."
+fi
+
 echo "Deployment Complete!"
+
+#only keep 10 deploys
+echo "Removing old deploys:"
+cd ~
+ls ${ENVIRONMENT}_2* -t -d | tail -n +11
+rm -rf `ls ${ENVIRONMENT}_2* -t -d | tail -n +11`

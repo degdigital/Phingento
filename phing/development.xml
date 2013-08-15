@@ -24,7 +24,7 @@
         <delete dir="${magedir}/media" />
         <advanced-symlink link="${magedir}">
             <fileset dir="${project.basedir}">
-                <include name="js/*"/>
+                <include name="js/**"/>
                 <include name="lib/**"/>
                 <include name="shell/*"/>
                 <include name="errors/*"/>
@@ -46,9 +46,7 @@
     </target>
 
     <target name="flush-cache">
-        <exec command="rm -rf '${project.magedir}/var/cache'"/>
-        <exec command="rm -rf '${project.magedir}/var/full_page_cache'"/>
-        <exec command="rm -rf '${project.magedir}/var/phpunit.cache'"/>
+        <exec dir="${project.magedir}" command="n98-magerun.phar cache:flush" checkreturn="true" logoutput="true"/>
     </target>
 
     <!-- Sets up hosts file and apache config can only be run as root -->
@@ -56,7 +54,6 @@
         <taskdef name="domains" classname="DomainsTask"/>
         <taskdef name="apache-config" classname="ApacheConfigTask"/>
 
-        <property environment="env"/>
         <property name="project.magento.runcodes" value=""/>
 
         <!-- update hosts file -->
@@ -73,7 +70,6 @@
     <target name="setup-nginx">
         <taskdef name="domains" classname="DomainsTask"/>
 
-        <property environment="env"/>
         <property name="project.magento.runcodes" value=""/>
         <property name="project.magento.runtype" value="store"/>
 
@@ -120,6 +116,63 @@
         <exec dir="${skin}" command="compass watch" checkreturn="true" spawn="true"/>
     </target>
 
+    <target name="restore-backup">
+        <input defaultValue="develop" message="Which environment do you want to restore? " propertyName="backup.environment" validArgs="develop,alpha,beta,live"/>
+        <property name="backup_file" value="${project.name}_${backup.environment}_backup.tar.gz"/>
+        <available file="${backup_file}" filepath="${backup.dir}" property="backup_exists" value="Y"/>
+        <fail unless="backup_exists" message="${backup_file} does not exist."/>
+
+        <exec dir="${backup.dir}" command="rm -rf ${project.name}_${backup.environment}"/>
+        <exec dir="${backup.dir}" command="tar -xf ${backup_file}"/>
+        <property name="backup.extracted" value="${backup.dir}/${project.name}_${backup.environment}"/>
+
+        <if>
+            <available file="${backup.extracted}/${project.name}.sql"/>
+            <then>
+                <exec dir="${project.magedir}" command="n98-magerun.phar db:drop -f" checkreturn="false" logoutput="true" />
+                <exec dir="${project.magedir}" command="n98-magerun.phar db:create" checkreturn="false" logoutput="true"/>
+                <exec dir="${project.magedir}" command="n98-magerun.phar db:import ${backup.extracted}/*.sql" logoutput="true" checkreturn="true"/>
+
+                <php function="str_replace" returnProperty="escapedProjectName">
+                    <param value="_"/>
+                    <param value=""/>
+                    <param value="${project.name}"/>
+                </php>
+
+                <exec dir="${project.magedir}" command="n98-magerun.phar dev:symlinks --global --on" logoutput="true"/>
+                <exec dir="${project.magedir}" command="n98-magerun.phar config:set web/unsecure/base_url http://${escapedProjectName}.${env.HOSTNAME}/" logoutput="true"/>
+                <exec dir="${project.magedir}" command="n98-magerun.phar config:set web/secure/base_url http://${escapedProjectName}.${env.HOSTNAME}/" logoutput="true"/>
+
+                <if>
+                    <equals arg1="${project.magento.runtype}" arg2="website"/>
+                    <then>
+                        <property name="scope" value="websites"/>
+                    </then>
+                    <else>
+                        <property name="scope" value="stores"/>
+                    </else>
+                </if>
+
+                <if>
+                    <isset property="project.magento.runcodes"/>
+                    <then>
+                        <foreach target="set-base-url" param="runcode" list="${project.magento.runcodes}"/>
+                    </then>
+                </if>
+
+                <phingcall target="flush-cache"/>
+            </then>
+        </if>
+
+        <if>
+            <available file="${backup.extracted}/${backup.environment}_media"/>
+            <then>
+                <echo message="Copying media"/>
+                <exec command="cp -Rf ${backup.environment}_media/* ${project.magedir}/media" dir="${backup.extracted}" checkreturn="true"/>
+            </then>
+        </if>
+    </target>
+
     <!-- utility targets -->
     <target name="apply-patch">
         <patch patchfile="${patch.abspath}" dir="${project.magedir}" strip="0" haltonfailure="true" />
@@ -128,5 +181,10 @@
     <target name="clear-symlinks">
         <resolvepath propertyName="magedir" path="${project.magedir}"/>
         <exec dir="${magedir}" command="find -type l -exec rm {} \;"/>
+    </target>
+
+    <target name="set-base-url">
+        <exec dir="${project.magedir}" command="n98-magerun.phar config:set --scope=${scope} --scope-id=${runcode} web/unsecure/base_url http://${escapedProjectName}-${runcode}.${env.HOSTNAME}/" logoutput="true"/>
+        <exec dir="${project.magedir}" command="n98-magerun.phar config:set --scope=${scope} --scope-id=${runcode} web/secure/base_url http://${escapedProjectName}-${runcode}.${env.HOSTNAME}/" logoutput="true"/>
     </target>
 </project>
