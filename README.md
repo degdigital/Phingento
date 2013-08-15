@@ -60,8 +60,7 @@ Server Setup
 ------------
 
 1. Copy files in the server directory to all deployment servers.
-2. Modify the backup script to include correct database connection information.
-3. Create one or more users with the same name as each project deployed on the server.
+2. Create one or more users with the same name as each project deployed on the server.
 
 Development Targets
 -----------------
