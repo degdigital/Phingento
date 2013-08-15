@@ -1,0 +1,27 @@
+Version 2.0
+------------
+
+To Upgrade:
+On your development workstation you must install the latest n98-magerun.
+On all deployment servers update the scripts in usr/local/bin.
+
+Changes:
+Removed environment specific deploy and backup targets in favor of generic backup and deploy targets which prompt for the environment.
+You can now configure what environments you have by setting deploy.environments.
+Backup now prompts you to back up the database, media, or both.
+Backup now echo's the size of the backup.
+New restore_backup target does a completely automated restore of the database and media to your local development environment.
+Installing the backup script no longer requires you to edit the script to set database credentials.
+flush_cache now uses n98-magerun, so it works with all cache backends.
+After deploying the cache storage is flushed (again with n98-magerun)
+Deploying now keeps only 10 previous deploys.
+
+Bugs Fixed:
+Sometimes git's autocrlf feature could cause switching branches to fail during package.
+Backup was broken with password authentication.
+It was not possible to overwrite files in subdirectories of /js with relink.
+
+Version 1.0
+------------
+
+Initial Public Release
