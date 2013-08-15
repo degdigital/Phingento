@@ -15,6 +15,7 @@ Dependencies
 1. [Phing] (http://www.phing.info/trac/wiki/Users/Download)
 2. [VersionControl_Git] (http://pear.php.net/package/VersionControl_Git)
 3. [pecl-ssh2] (http://pecl.php.net/package/ssh2)
+4. [n98-magerun] (https://github.com/netz98/n98-magerun)
 
 Project Setup
 -------------
@@ -42,8 +43,8 @@ The following properties in build.properties control various aspects of the deve
 
 * __project.libs.branch:__ The branch from the shared library repository to pull shared code from.
 
-The following properties determine how environments are set up for deployment and backup.  By default develop, alpha, beta, and live
-environment targets are set up.  To add or remove environments you can edit phing/build.xml.
+The following properties determine how environments are set up for deployment and backup.  To add or remove environments you can modify
+the deploy.environments property in default.properties.
 
 * __deploy.username:__  A user on all deployment servers which has permissions to deploy the application.  Highly recommended
  to set this to ${phing.project.name}.  Can be overridden via deploy.[environment].username.
@@ -80,9 +81,12 @@ Development Targets
     the media directory, and var/sessions into the runtime directory.  In the course of the development process you will
     need to run relink to see new modules, themes, skins, and locale files.
 
-* __flush_cache:__  Clears the magento filesystem cache.
+* __flush_cache:__  Clears the magento cache as configured in the local.xml.
 
-* __development/beta/live_backup:__ Creates an archive with media, local.xml, and database dumps from the specified environment.
+* __backup:__ Creates an archive with media, local.xml, and database dumps from the specified environment.
+
+* __restore_backup:__ Unpacks a backup archive and restores the database and media locally, requires a mysql user with privileges to drop
+    and create databases configured in app/etc/local.xml.
 
 * __compass_watch:__ Starts [compass] (http://compass-style.org/) watcher in all compass enabled skin directories.
 
