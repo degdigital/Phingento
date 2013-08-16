@@ -20,6 +20,7 @@ Bugs Fixed:
 Sometimes git's autocrlf feature could cause switching branches to fail during package.
 Backup was broken with password authentication.
 It was not possible to overwrite files in subdirectories of /js with relink.
+Patch files included in libs were not being applied during rebuild.
 
 Version 1.0
 ------------
