@@ -40,7 +40,7 @@
         <if>
             <isset property="git.branch"/>
             <then>
-                <gitcheckout repository="${git.local}" branchname="${git.branch}"/>
+                <gitcheckout repository="${git.local}" branchname="${git.branch}" force="true"/>
             </then>
         </if>
 

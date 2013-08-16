@@ -8,6 +8,7 @@ This build file does some initialization and contains the targets which are actu
     </php>
 
     <tstamp/>
+    <property environment="env"/>
 
     <!-- load the per-project build properties file -->
     <property file="build.properties"/>
@@ -60,48 +61,44 @@ This build file does some initialization and contains the targets which are actu
         <phing buildfile="${development}" target="compass-watch" haltonfailure="true"/>
     </target>
 
-    <!-- Develop targets -->
-    <target name="deploy_develop">
-        <property name="deploy.environment" value="develop"/>
+    <target name="deploy">
+        <if>
+            <not><isset property="deploy.environment"/></not>
+            <then>
+                <input propertyName="deploy.environment" defaultValue="${deploy.environments.default}" validArgs="${deploy.environments}" message="Which environment would you like to deploy to? "/>
+            </then>
+        </if>
+
         <phing buildfile="${package}" target="package" haltonfailure="true"/>
-        <phing buildfile="${remote}" target="develop-deploy" haltonfailure="true"/>
-    </target>
-    <target name="backup_develop">
-        <property name="deploy.environment" value="develop"/>
-        <phing buildfile="${remote}" target="develop-backup" haltonfailure="true"/>
+        <phing buildfile="${remote}" target="environment-deploy" haltonfailure="true"/>
     </target>
 
-    <!-- Alpha targets -->
-    <target name="deploy_alpha">
-        <property name="deploy.environment" value="alpha"/>
-        <phing buildfile="${package}" target="package" haltonfailure="true"/>
-        <phing buildfile="${remote}" target="alpha-deploy" haltonfailure="true"/>
-    </target>
-    <target name="backup_alpha">
-        <property name="deploy.environment" value="alpha"/>
-        <phing buildfile="${remote}" target="alpha-backup" haltonfailure="true"/>
-    </target>
+    <target name="backup">
+        <if>
+            <not><isset property="deploy.environment"/></not>
+            <then>
+                <input propertyName="deploy.environment" defaultValue="${deploy.environments.default}" validArgs="${deploy.environments}" message="Which environment would you like to deploy to? "/>
+            </then>
+        </if>
 
-    <!-- Beta targets -->
-    <target name="deploy_beta">
-        <property name="deploy.environment" value="beta"/>
-        <phing buildfile="${package}" target="package" haltonfailure="true"/>
-        <phing buildfile="${remote}" target="beta-deploy" haltonfailure="true"/>
-    </target>
-    <target name="backup_beta">
-        <property name="deploy.environment" value="beta"/>
-        <phing buildfile="${remote}" target="beta-backup" haltonfailure="true"/>
-    </target>
+        <if>
+            <not><isset property="backup.database"/></not>
+            <then>
+                <input propertyName="backup.database" defaultValue="Y" validArgs="Y,N" message="Backup Database? "/>
+            </then>
+        </if>
 
-    <!-- Live targets -->
-    <target name="deploy_live">
-        <property name="deploy.environment" value="live"/>
-        <phing buildfile="${package}" target="package" haltonfailure="true"/>
-        <phing buildfile="${remote}" target="live-deploy" haltonfailure="true"/>
+        <if>
+            <not><isset property="backup.files"/></not>
+            <then>
+                <input propertyName="backup.files" defaultValue="N" validArgs="Y,N" message="Backup Files? "/>
+            </then>
+        </if>
+
+        <phing buildfile="${remote}" target="environment-backup" haltonfailure="true"/>
     </target>
-    <target name="backup_live">
-        <property name="deploy.environment" value="live"/>
-        <phing buildfile="${remote}" target="live-backup" haltonfailure="true"/>
+    <target name="restore_backup">
+        <phing buildfile="${development}" target="restore-backup" haltonfailure="true"/>
     </target>
 
     <target name="package">

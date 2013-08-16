@@ -1,13 +1,40 @@
 #!/bin/bash
 # Creates a tarball with the projects current media folder and a database dump
-# Must be edited to supply database connection information
-# Example: backup environment
+# Specify one of the following options:
+#   -f Backup Files
+#   -d Backup Database
+# Example: backup beta -f -d
 
 if [ -z $1 ]; then
     echo "you must provide the name of the environment to backup"
     exit 1
 else
     ENVIRONMENT=$1
+fi
+
+shift
+
+FILES=0
+DATABASE=0
+
+while getopts ":df" opt; do
+    case $opt in
+        f)
+            FILES=1
+            ;;
+        d)
+            DATABASE=1
+            ;;
+        \?)
+            echo "Invalid option: -$OPTARG" >&2
+            exit 1
+         ;;
+    esac
+done
+
+if [[ "$FILES" == 0 && "$DATABASE" == 0 ]]; then
+    echo "Nothing to backup, please specify -f or -d flags"
+    exit 1
 fi
 
 PROJECT=$USER
@@ -19,10 +46,20 @@ if [ -d /tmp/$BACKUP_NAME ]; then
 fi
 mkdir /tmp/$BACKUP_NAME
 
-cp -arf ~/"$ENVIRONMENT"_media /tmp/$BACKUP_NAME
-cp ~/$ENVIRONMENT/app/etc/local.xml /tmp/$BACKUP_NAME
+if [ "$FILES" = "1" ]; then
+    cp -arf ~/"$ENVIRONMENT"_media /tmp/$BACKUP_NAME
+    cp ~/$ENVIRONMENT/app/etc/local.xml /tmp/$BACKUP_NAME
+fi
 
-mysqldump --user=root --password=Password --add-locks --disable-keys $PROJECT > /tmp/$BACKUP_NAME/$PROJECT.sql
+if [ "$DATABASE" = "1" ]; then
+    if [[ -x /usr/local/bin/n98-magerun.phar ]]; then
+        cd ~/$ENVIRONMENT
+        n98-magerun.phar db:dump /tmp/$BACKUP_NAME/$PROJECT.sql
+    else
+        echo "n98-magerun is missing please install to /usr/local/bin"
+        exit 1
+    fi
+fi
 
 cd /tmp/
 
@@ -32,6 +69,6 @@ fi
 
 tar czf /tmp/"$BACKUP_NAME"_backup.tar.gz $BACKUP_NAME
 
-BACKUP_SIZE=$(ll -h /tmp/"$BACKUP_NAME"_backup.tar.gz | awk '{ print $5 }' | tail -1)
+BACKUP_SIZE=`ls -lh /tmp/"$BACKUP_NAME"_backup.tar.gz | awk '{ print $5 }' | tail -1`
 
 echo "Backup Complete - $BACKUP_SIZE"

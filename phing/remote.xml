@@ -102,33 +102,37 @@
         </if>
 
         <if>
+            <equals arg1="${backup.database}" arg2="Y"/>
+            <then>
+                <property name="database" value="-d"/>
+            </then>
+        </if>
+
+        <if>
+            <equals arg1="${backup.files}" arg2="Y"/>
+            <then>
+                <property name="files" value="-f"/>
+            </then>
+        </if>
+
+        <if>
             <isset property="deploy.password"/>
             <then>
                 <ssh host="${deploy.host}" username="${deploy.username}"  password="${deploy.password}"
-                     port="${deploy.port}" command="backup ${deploy.environment}"/>
+                     port="${deploy.port}" command="backup ${deploy.environment} ${database} ${files}"/>
                 <scp host="${deploy.host}" username="${deploy.username}" password="${deploy.password}"
                      port="${deploy.port}" todir="${backup.dir}" file="/tmp/${project.name}_${deploy.environment}_backup.tar.gz" fetch="true"/>
             </then>
             <else>
                 <ssh host="${deploy.host}" username="${deploy.username}" pubkeyfile="${deploy.pubkeyfile}" privkeyfile="${deploy.privkeyfile}"
-                     port="${deploy.port}" command="backup ${deploy.environment}"/>
+                     port="${deploy.port}" command="backup ${deploy.environment} ${database} ${files}"/>
                 <scp host="${deploy.host}" username="${deploy.username}" pubkeyfile="${deploy.pubkeyfile}" privkeyfile="${deploy.privkeyfile}"
                      port="${deploy.port}" todir="${backup.dir}" file="/tmp/${project.name}_${deploy.environment}_backup.tar.gz" fetch="true"/>
             </else>
         </if>
     </target>
 
-    <!-- Hidden targets for build.xml -->
-    <!-- Develop targets -->
-    <target name="develop-deploy" depends="initialize_environment,deploy,complete_deploy"/>
-    <target name="develop-backup" depends="initialize_environment,backup"/>
-    <!-- Alpha targets -->
-    <target name="alpha-deploy" depends="initialize_environment,deploy,complete_deploy"/>
-    <target name="alpha-backup" depends="initialize_environment,backup"/>
-    <!-- Beta targets -->
-    <target name="beta-deploy" depends="initialize_environment,deploy,complete_deploy"/>
-    <target name="beta-backup" depends="initialize_environment,backup"/>
-    <!-- Live targets -->
-    <target name="live-deploy" depends="initialize_environment,deploy,complete_deploy"/>
-    <target name="live-backup" depends="initialize_environment,backup"/>
+    <!-- These targets are the ones actually run from build.xml -->
+    <target name="environment-deploy" depends="initialize_environment,deploy,complete_deploy"/>
+    <target name="environment-backup" depends="initialize_environment,backup"/>
 </project>
