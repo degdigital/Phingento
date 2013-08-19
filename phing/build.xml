@@ -10,16 +10,16 @@ This build file does some initialization and contains the targets which are actu
     <tstamp/>
     <property environment="env"/>
 
+    <!-- load the cross project default properties file -->
+    <property file="${magento_tools}/default.properties"/>
+
     <!-- load the per-project build properties file -->
-    <property file="build.properties"/>
+    <property file="build.properties" override="true"/>
 
     <fail unless="workspace" message="The workspace property MUST be set"/>
     <fail unless="project.magento.edition" message="The project.magento.edition property MUST be set"/>
     <fail unless="project.magento.version" message="The project.magento.version property MUST be set"/>
     <fail unless="project.git.remote" message="The project.git.remote property MUST be set"/>
-
-    <!-- load the cross project default properties file -->
-    <property file="${magento_tools}/default.properties"/>
 
     <resolvepath propertyName="workspace" file="${workspace}"/>
 
