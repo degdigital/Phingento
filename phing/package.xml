@@ -72,12 +72,39 @@
             </fileset>
         </copy>
 
+
         <!-- Apply any checked in .patch to the magento root dir -->
         <foreach target="apply_patch" param="patch" absparam="abspatch">
             <fileset dir="${temp_path}/magento">
                 <include name="*.patch"/>
             </fileset>
         </foreach>
+
+        <if>
+            <and>
+                <isset property="deploy.${deploy.environment}.compressjs"/>
+                <istrue value="${deploy.${deploy.environment}.compressjs}"/>
+            </and>
+            <then>
+                <if>
+                    <not><available file="${closure.compiler.path}/compiler.jar" type="file"/></not>
+                    <then><fail message="Closure compiler jar not found in ${closure.compiler.path}!"/></then>
+                </if>
+
+                <foreach target="compile-js" param="script" absparam="scriptPath">
+                    <fileset dir="${temp_path}/magento/js">
+                        <include name="**/*.js"/>
+                        <exclude name="tiny_mce/**"/>
+                        <exclude name="extjs/**"/>
+                        <exclude name="mage/adminhtml/**"/>
+                        <exclude name="enterprise/adminhtml/*"/>
+                    </fileset>
+                    <fileset dir="${temp_path}/magento/skin/frontend">
+                        <include name="**/*.js"/>
+                    </fileset>
+                </foreach>
+            </then>
+        </if>
 
         <property name="exclusions" value="--exclude=app/etc/local.xml --exclude=*.patch --exclude=LICENSE* --exclude=RELEASE_NOTES.txt --exclude=install.php"/>
 
@@ -94,5 +121,17 @@
         </php>
 
         <exec dir="${skin}" command="compass compile --output-style compressed --force" logoutput="true" checkreturn="true"/>
+    </target>
+
+    <target name="compile-js">
+        <trycatch>
+            <try>
+                <exec dir="${closure.compiler.path}" command="java -jar compiler.jar --js ${scriptPath} --js_output_file ${scriptPath}.min" checkreturn="true"/>
+                <move file="${scriptPath}.min" tofile="${scriptPath}" overwrite="true"/>
+            </try>
+            <catch>
+                <warn message="${scriptPath} could not be compiled"/>
+            </catch>
+        </trycatch>
     </target>
 </project>

@@ -8,13 +8,15 @@
         <delete dir="${project.magedir}"/>
         <mkdir dir="${project.magedir}"/>
         <exec dir="${project.magedir}" checkreturn="true" command="tar --strip-components 1 -xf ${magento.archive.file}" logoutput="true"/>
+        <phing buildfile="${libs}" target="link-libs"/>
         <foreach target="apply-patch" param="patch.path" absparam="patch.abspath">
             <fileset dir="${project.basedir}">
                 <include name="*.patch"/>
             </fileset>
+            <fileset dir="${project.magedir}">
+                <include name="*.patch"/>
+            </fileset>
         </foreach>
-
-        <phing buildfile="${libs}" target="link-libs"/>
 
         <chmod file="${project.magedir}/var" mode="777"/>
     </target>

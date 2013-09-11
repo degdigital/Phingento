@@ -81,6 +81,7 @@
                 <advanced-symlink link="${magedir}">
                     <fileset dir="${project.libs.dir}/${library}">
                         <include name="*.php"/>
+                        <include name="*.patch"/>
                         <include name="js/*"/>
                         <include name="lib/**"/>
                         <include name="shell/*"/>
