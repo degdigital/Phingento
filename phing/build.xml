@@ -77,7 +77,7 @@ This build file does some initialization and contains the targets which are actu
         <if>
             <not><isset property="deploy.environment"/></not>
             <then>
-                <input propertyName="deploy.environment" defaultValue="${deploy.environments.default}" validArgs="${deploy.environments}" message="Which environment would you like to deploy to? "/>
+                <input propertyName="deploy.environment" defaultValue="${deploy.environments.default}" validArgs="${deploy.environments}" message="Which environment would you like to back up? "/>
             </then>
         </if>
 
