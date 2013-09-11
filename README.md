@@ -5,6 +5,7 @@ Magento Development and Deployment Toolkit using Phing.  This can be used out of
 
 Features:
 * Packages and deploys magento to multiple servers reliably and securely.
+* Provides Sass compilation and Javascript compression.
 * Creates Symlinked development environment that exactly mirrors the deploy.
 * Provides a way to share code between magento projects.
 * Creates database / media snapshots from deployed environments for development.
@@ -16,6 +17,8 @@ Dependencies
 2. [VersionControl_Git] (http://pear.php.net/package/VersionControl_Git)
 3. [pecl-ssh2] (http://pecl.php.net/package/ssh2)
 4. [n98-magerun] (https://github.com/netz98/n98-magerun)
+5. [Compass] (http://compass-style.org/) (optional)
+6. [Closure Compiler] (https://developers.google.com/closure/compiler/) (optional)
 
 Project Setup
 -------------
