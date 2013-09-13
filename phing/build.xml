@@ -89,9 +89,26 @@ This build file does some initialization and contains the targets which are actu
         </if>
 
         <if>
-            <not><isset property="backup.files"/></not>
+            <and>
+                <equals arg1="${backup.database}" arg2="Y"/>
+                <not><isset property="backup.database.strip"/></not>
+            </and>
             <then>
-                <input propertyName="backup.files" defaultValue="N" validArgs="Y,N" message="Backup Files? "/>
+                <input propertyName="backup.database.strip" defaultValue="Y" validArgs="Y,N" message="Strip logs and customer data? "/>
+            </then>
+        </if>
+
+        <if>
+            <not><isset property="backup.media"/></not>
+            <then>
+                <input propertyName="backup.media" defaultValue="N" validArgs="Y,N" message="Backup Media? "/>
+            </then>
+        </if>
+
+        <if>
+            <not><isset property="backup.var"/></not>
+            <then>
+                <input propertyName="backup.var" defaultValue="N" validArgs="Y,N" message="Backup Var? "/>
             </then>
         </if>
 
