@@ -26,6 +26,9 @@
         <delete dir="${magedir}/media" />
         <advanced-symlink link="${magedir}">
             <fileset dir="${project.basedir}">
+                <include name="*.ico"/>
+                <include name="*.php"/>
+                <include name="*.sh"/>
                 <include name="js/**"/>
                 <include name="lib/**"/>
                 <include name="shell/*"/>
@@ -171,6 +174,8 @@
             <then>
                 <echo message="Copying media"/>
                 <exec command="cp -Rf ${backup.environment}_media/* ${project.magedir}/media" dir="${backup.extracted}" checkreturn="true"/>
+                <exec command="find -type d -exec chmod 777 {} +" dir="${project.magedir}/media" checkreturn="true"/>
+                <exec command="find -type f -exec chmod 666 {} +" dir="${project.magedir}/media" checkreturn="true"/>
             </then>
         </if>
     </target>

@@ -82,6 +82,8 @@
                     <fileset dir="${project.libs.dir}/${library}">
                         <include name="*.php"/>
                         <include name="*.patch"/>
+                        <include name="*.ico"/>
+                        <include name="*.sh"/>
                         <include name="js/*"/>
                         <include name="lib/**"/>
                         <include name="shell/*"/>
