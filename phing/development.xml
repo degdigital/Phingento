@@ -147,6 +147,11 @@
                 <exec dir="${project.magedir}" command="n98-magerun.phar dev:symlinks --global --on" logoutput="true"/>
                 <exec dir="${project.magedir}" command="n98-magerun.phar config:set web/unsecure/base_url http://${escapedProjectName}.${env.HOSTNAME}/" logoutput="true"/>
                 <exec dir="${project.magedir}" command="n98-magerun.phar config:set web/secure/base_url http://${escapedProjectName}.${env.HOSTNAME}/" logoutput="true"/>
+                <exec dir="${project.magedir}" command="n98-magerun.phar config:set --scope=stores --scope-id=0 web/unsecure/base_url http://${escapedProjectName}.${env.HOSTNAME}/" logoutput="true"/>
+                <exec dir="${project.magedir}" command="n98-magerun.phar config:set --scope=stores --scope-id=0 web/secure/base_url http://${escapedProjectName}.${env.HOSTNAME}/" logoutput="true"/>
+                <exec dir="${project.magedir}" command="n98-magerun.phar db:query &quot;DELETE FROM core_config_data WHERE path = 'dev/js/merge_files'&quot;"/>
+                <exec dir="${project.magedir}" command="n98-magerun.phar db:query &quot;DELETE FROM core_config_data WHERE path = 'dev/css/merge_css_files'&quot;"/>
+                <exec dir="${project.magedir}" command="n98-magerun.phar db:query &quot;UPDATE core_cache_option SET \`value\` = 0 WHERE code = 'full_page'&quot;"/>
 
                 <if>
                     <equals arg1="${project.magento.runtype}" arg2="website"/>
