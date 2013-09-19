@@ -119,7 +119,12 @@ This build file does some initialization and contains the targets which are actu
     </target>
 
     <target name="package">
-        <property name="package.file" value="${workspace}/${project.name}-${DSTAMP}-${TSTAMP}.tar.gz"/>
+        <if>
+            <not><isset property="deploy.environment"/></not>
+            <then>
+                <input propertyName="deploy.environment" defaultValue="${deploy.environments.default}" validArgs="${deploy.environments}" message="Which environment would you like create a package for? "/>
+            </then>
+        </if>
         <phing buildfile="${package}" target="package" haltonfailure="true"/>
     </target>
 </project>
