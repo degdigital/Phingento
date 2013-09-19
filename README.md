@@ -70,10 +70,11 @@ Server Setup
 
 Development Targets
 -----------------
-* __setup_apache/setup_nginx:__  Sets up host file, and Apache/nginx config for the project.
-    Unlike the other tasks this must be run with root permissions.
+* __setup_project:__  Sets up host file and Apache or nginx config for the project.
+    Unlike the other tasks this must be run with root permissions.  By default will configure apache.  To change modify the
+    default.properties file and set setup.webserver=nginx.
     After setting up Apache or nginx the project will be accessible from http://projectname.yourhostname.com/.  In the
-    build.properies file for the project you can define project.runcodes (comma separated), and project.runtype.  These
+    build.properties file for the project you can define project.runcodes (comma separated), and project.runtype.  These
     tell the setup-project task to create additional virtualhosts for the different websites / stores configured in Magento.
     In that case the default store will be available at http://projectname.yourhostname.com/ while the other websites will be available
     at http://projectname-runcode.yourhostname.com/.
