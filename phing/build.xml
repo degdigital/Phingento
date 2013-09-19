@@ -35,11 +35,8 @@ This build file does some initialization and contains the targets which are actu
     <property name="magento.archive.file" value="${magento.archive.dir}/${project.magento.edition}-${project.magento.version}.${magento.archive.extension}"/>
 
     <!-- Development targets -->
-    <target name="setup_apache">
-        <phing buildfile="${development}" target="setup-apache" haltonfailure="true"/>
-    </target>
-    <target name="setup_nginx">
-        <phing buildfile="${development}" target="setup-nginx" haltonfailure="true"/>
+    <target name="setup_project">
+        <phing buildfile="${development}" target="setup-project" haltonfailure="true"/>
     </target>
     <target name="rebuild">
         <phing buildfile="${development}" target="reset" haltonfailure="true"/>

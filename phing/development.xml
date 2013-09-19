@@ -54,7 +54,22 @@
         <exec dir="${project.magedir}" command="n98-magerun.phar cache:flush" checkreturn="true" logoutput="true"/>
     </target>
 
-    <!-- Sets up hosts file and apache config can only be run as root -->
+    <!-- Sets up hosts file and apache/nginx config can only be run as root -->
+    <target name="setup-project">
+        <if>
+            <and>
+                <isset property="setup.webserver"/>
+                <equals arg1="${setup.webserver}" arg2="nginx"/>
+            </and>
+            <then>
+                <phingcall target="setup-nginx"/>
+            </then>
+            <else>
+                <phingcall target="setup-apache"/>
+            </else>
+        </if>
+    </target>
+
     <target name="setup-apache">
         <taskdef name="domains" classname="DomainsTask"/>
         <taskdef name="apache-config" classname="ApacheConfigTask"/>
