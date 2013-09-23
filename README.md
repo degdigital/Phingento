@@ -20,6 +20,26 @@ Dependencies
 5. [Compass] (http://compass-style.org/) (optional)
 6. [Closure Compiler] (https://developers.google.com/closure/compiler/) (optional)
 
+Workstation Setup
+-----------------
+To get your CentOS / RHEL 6.x development environment up install the following software as root.  This guide assumes you
+already have the requirements to run magento and a JVM installed.
+Install Phing and pecl-ssh2:
+    yum install php-pear-phing php-pecl-ssh2
+Install VersionContro_Git:
+    pear install VersionControl_Git-alpha
+Install n98-magerun:
+    cd /usr/local/bin
+    wget https://raw.github.com/netz98/n98-magerun/master/n98-magerun.phar
+    chmod +x n98-magerun.phar
+Install Compass (for Sass compilation):
+    yum install rubygems
+    gem install compass compass-normalize
+Install Closure Compiler (for Javascript compression):
+    cd /usr/local/lib/java
+    wget http://closure-compiler.googlecode.com/files/compiler-latest.zip
+    unzip compiler-latest.zip
+
 Project Setup
 -------------
 
