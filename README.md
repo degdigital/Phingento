@@ -60,7 +60,7 @@ the deploy.environments property in default.properties.
 * __deploy.[environment].branch:__ The git branch to deploy from.
 
 * __deploy.[environment].compressjs:__ When set to true will use the google closure compiler to compress all core and skin js used
-    in the front end of the site.  This will add up to 10 minutes to your build time, but reduces js size by nearly 50%.
+    in the front end of the site.  This will add up to 10 minutes to your build time, but reduces Javascript size by about 50%.
 
 Server Setup
 ------------

@@ -3,6 +3,7 @@ Version 2.1
 
 To Upgrade:
 On all deployment servers update the scripts in usr/local/bin.
+Non-passive changes were made to the backup script arguments.
 
 Changes:
 Now supports javascript compression via Google's closure compiler.
