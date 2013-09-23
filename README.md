@@ -29,7 +29,7 @@ Install Phing and pecl-ssh2:
 
     yum install php-pear-phing php-pecl-ssh2
 
-Install VersionContro_Git:
+Install VersionControl_Git:
 
     pear install VersionControl_Git-alpha
 
