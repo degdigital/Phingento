@@ -8,13 +8,15 @@
         <delete dir="${project.magedir}"/>
         <mkdir dir="${project.magedir}"/>
         <exec dir="${project.magedir}" checkreturn="true" command="tar --strip-components 1 -xf ${magento.archive.file}" logoutput="true"/>
+        <phing buildfile="${libs}" target="link-libs"/>
         <foreach target="apply-patch" param="patch.path" absparam="patch.abspath">
             <fileset dir="${project.basedir}">
                 <include name="*.patch"/>
             </fileset>
+            <fileset dir="${project.magedir}">
+                <include name="*.patch"/>
+            </fileset>
         </foreach>
-
-        <phing buildfile="${libs}" target="link-libs"/>
 
         <chmod file="${project.magedir}/var" mode="777"/>
     </target>
@@ -24,6 +26,9 @@
         <delete dir="${magedir}/media" />
         <advanced-symlink link="${magedir}">
             <fileset dir="${project.basedir}">
+                <include name="*.ico"/>
+                <include name="*.php"/>
+                <include name="*.sh"/>
                 <include name="js/**"/>
                 <include name="lib/**"/>
                 <include name="shell/*"/>
@@ -49,7 +54,22 @@
         <exec dir="${project.magedir}" command="n98-magerun.phar cache:flush" checkreturn="true" logoutput="true"/>
     </target>
 
-    <!-- Sets up hosts file and apache config can only be run as root -->
+    <!-- Sets up hosts file and apache/nginx config can only be run as root -->
+    <target name="setup-project">
+        <if>
+            <and>
+                <isset property="setup.webserver"/>
+                <equals arg1="${setup.webserver}" arg2="nginx"/>
+            </and>
+            <then>
+                <phingcall target="setup-nginx"/>
+            </then>
+            <else>
+                <phingcall target="setup-apache"/>
+            </else>
+        </if>
+    </target>
+
     <target name="setup-apache">
         <taskdef name="domains" classname="DomainsTask"/>
         <taskdef name="apache-config" classname="ApacheConfigTask"/>
@@ -142,6 +162,11 @@
                 <exec dir="${project.magedir}" command="n98-magerun.phar dev:symlinks --global --on" logoutput="true"/>
                 <exec dir="${project.magedir}" command="n98-magerun.phar config:set web/unsecure/base_url http://${escapedProjectName}.${env.HOSTNAME}/" logoutput="true"/>
                 <exec dir="${project.magedir}" command="n98-magerun.phar config:set web/secure/base_url http://${escapedProjectName}.${env.HOSTNAME}/" logoutput="true"/>
+                <exec dir="${project.magedir}" command="n98-magerun.phar config:set --scope=stores --scope-id=0 web/unsecure/base_url http://${escapedProjectName}.${env.HOSTNAME}/" logoutput="true"/>
+                <exec dir="${project.magedir}" command="n98-magerun.phar config:set --scope=stores --scope-id=0 web/secure/base_url http://${escapedProjectName}.${env.HOSTNAME}/" logoutput="true"/>
+                <exec dir="${project.magedir}" command="n98-magerun.phar db:query &quot;DELETE FROM core_config_data WHERE path = 'dev/js/merge_files'&quot;"/>
+                <exec dir="${project.magedir}" command="n98-magerun.phar db:query &quot;DELETE FROM core_config_data WHERE path = 'dev/css/merge_css_files'&quot;"/>
+                <exec dir="${project.magedir}" command="n98-magerun.phar db:query &quot;UPDATE core_cache_option SET \`value\` = 0 WHERE code = 'full_page'&quot;"/>
 
                 <if>
                     <equals arg1="${project.magento.runtype}" arg2="website"/>
@@ -169,6 +194,8 @@
             <then>
                 <echo message="Copying media"/>
                 <exec command="cp -Rf ${backup.environment}_media/* ${project.magedir}/media" dir="${backup.extracted}" checkreturn="true"/>
+                <exec command="find -type d -exec chmod 777 {} +" dir="${project.magedir}/media" checkreturn="true"/>
+                <exec command="find -type f -exec chmod 666 {} +" dir="${project.magedir}/media" checkreturn="true"/>
             </then>
         </if>
     </target>

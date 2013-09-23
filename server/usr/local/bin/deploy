@@ -130,6 +130,16 @@ else
     echo "n98-magerun not installed, flush cache from the admin."
 fi
 
+if [ -d ~/"$ENVIRONMENT"_media/js ]; then
+    rm -rf ~/"$ENVIRONMENT"_media/js
+fi
+if [ -d ~/"$ENVIRONMENT"_media/css ]; then
+    rm -rf ~/"$ENVIRONMENT"_media/css
+fi
+if [ -d ~/"$ENVIRONMENT"_media/css_secure ]; then
+    rm -rf ~/"$ENVIRONMENT"_media/css_secure
+fi
+
 echo "Deployment Complete!"
 
 #only keep 10 deploys

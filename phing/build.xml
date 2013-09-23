@@ -10,16 +10,16 @@ This build file does some initialization and contains the targets which are actu
     <tstamp/>
     <property environment="env"/>
 
+    <!-- load the cross project default properties file -->
+    <property file="${magento_tools}/default.properties"/>
+
     <!-- load the per-project build properties file -->
-    <property file="build.properties"/>
+    <property file="build.properties" override="true"/>
 
     <fail unless="workspace" message="The workspace property MUST be set"/>
     <fail unless="project.magento.edition" message="The project.magento.edition property MUST be set"/>
     <fail unless="project.magento.version" message="The project.magento.version property MUST be set"/>
     <fail unless="project.git.remote" message="The project.git.remote property MUST be set"/>
-
-    <!-- load the cross project default properties file -->
-    <property file="${magento_tools}/default.properties"/>
 
     <resolvepath propertyName="workspace" file="${workspace}"/>
 
@@ -35,11 +35,8 @@ This build file does some initialization and contains the targets which are actu
     <property name="magento.archive.file" value="${magento.archive.dir}/${project.magento.edition}-${project.magento.version}.${magento.archive.extension}"/>
 
     <!-- Development targets -->
-    <target name="setup_apache">
-        <phing buildfile="${development}" target="setup-apache" haltonfailure="true"/>
-    </target>
-    <target name="setup_nginx">
-        <phing buildfile="${development}" target="setup-nginx" haltonfailure="true"/>
+    <target name="setup_project">
+        <phing buildfile="${development}" target="setup-project" haltonfailure="true"/>
     </target>
     <target name="rebuild">
         <phing buildfile="${development}" target="reset" haltonfailure="true"/>
@@ -77,7 +74,7 @@ This build file does some initialization and contains the targets which are actu
         <if>
             <not><isset property="deploy.environment"/></not>
             <then>
-                <input propertyName="deploy.environment" defaultValue="${deploy.environments.default}" validArgs="${deploy.environments}" message="Which environment would you like to deploy to? "/>
+                <input propertyName="deploy.environment" defaultValue="${deploy.environments.default}" validArgs="${deploy.environments}" message="Which environment would you like to back up? "/>
             </then>
         </if>
 
@@ -89,9 +86,26 @@ This build file does some initialization and contains the targets which are actu
         </if>
 
         <if>
-            <not><isset property="backup.files"/></not>
+            <and>
+                <equals arg1="${backup.database}" arg2="Y"/>
+                <not><isset property="backup.database.strip"/></not>
+            </and>
             <then>
-                <input propertyName="backup.files" defaultValue="N" validArgs="Y,N" message="Backup Files? "/>
+                <input propertyName="backup.database.strip" defaultValue="Y" validArgs="Y,N" message="Strip logs and customer data? "/>
+            </then>
+        </if>
+
+        <if>
+            <not><isset property="backup.media"/></not>
+            <then>
+                <input propertyName="backup.media" defaultValue="N" validArgs="Y,N" message="Backup Media? "/>
+            </then>
+        </if>
+
+        <if>
+            <not><isset property="backup.var"/></not>
+            <then>
+                <input propertyName="backup.var" defaultValue="N" validArgs="Y,N" message="Backup Var? "/>
             </then>
         </if>
 
@@ -102,7 +116,12 @@ This build file does some initialization and contains the targets which are actu
     </target>
 
     <target name="package">
-        <property name="package.file" value="${workspace}/${project.name}-${DSTAMP}-${TSTAMP}.tar.gz"/>
+        <if>
+            <not><isset property="deploy.environment"/></not>
+            <then>
+                <input propertyName="deploy.environment" defaultValue="${deploy.environments.default}" validArgs="${deploy.environments}" message="Which environment would you like create a package for? "/>
+            </then>
+        </if>
         <phing buildfile="${package}" target="package" haltonfailure="true"/>
     </target>
 </project>

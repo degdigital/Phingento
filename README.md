@@ -5,6 +5,7 @@ Magento Development and Deployment Toolkit using Phing.  This can be used out of
 
 Features:
 * Packages and deploys magento to multiple servers reliably and securely.
+* Provides Sass compilation and Javascript compression.
 * Creates Symlinked development environment that exactly mirrors the deploy.
 * Provides a way to share code between magento projects.
 * Creates database / media snapshots from deployed environments for development.
@@ -16,6 +17,28 @@ Dependencies
 2. [VersionControl_Git] (http://pear.php.net/package/VersionControl_Git)
 3. [pecl-ssh2] (http://pecl.php.net/package/ssh2)
 4. [n98-magerun] (https://github.com/netz98/n98-magerun)
+5. [Compass] (http://compass-style.org/) (optional)
+6. [Closure Compiler] (https://developers.google.com/closure/compiler/) (optional)
+
+Workstation Setup
+-----------------
+To get your CentOS / RHEL 6.x development environment up install the following software as root.  This guide assumes you
+already have the requirements to run magento and a JVM installed.
+Install Phing and pecl-ssh2:
+    yum install php-pear-phing php-pecl-ssh2
+Install VersionContro_Git:
+    pear install VersionControl_Git-alpha
+Install n98-magerun:
+    cd /usr/local/bin
+    wget https://raw.github.com/netz98/n98-magerun/master/n98-magerun.phar
+    chmod +x n98-magerun.phar
+Install Compass (for Sass compilation):
+    yum install rubygems
+    gem install compass compass-normalize
+Install Closure Compiler (for Javascript compression):
+    cd /usr/local/lib/java
+    wget http://closure-compiler.googlecode.com/files/compiler-latest.zip
+    unzip compiler-latest.zip
 
 Project Setup
 -------------
@@ -56,6 +79,9 @@ the deploy.environments property in default.properties.
 
 * __deploy.[environment].branch:__ The git branch to deploy from.
 
+* __deploy.[environment].compressjs:__ When set to true will use the google closure compiler to compress all core and skin js used
+    in the front end of the site.  This will add up to 10 minutes to your build time, but reduces Javascript size by about 50%.
+
 Server Setup
 ------------
 
@@ -64,10 +90,11 @@ Server Setup
 
 Development Targets
 -----------------
-* __setup_apache/setup_nginx:__  Sets up host file, and Apache/nginx config for the project.
-    Unlike the other tasks this must be run with root permissions.
+* __setup_project:__  Sets up host file and Apache or nginx config for the project.
+    Unlike the other tasks this must be run with root permissions.  By default will configure apache.  To change modify the
+    default.properties file and set setup.webserver=nginx.
     After setting up Apache or nginx the project will be accessible from http://projectname.yourhostname.com/.  In the
-    build.properies file for the project you can define project.runcodes (comma separated), and project.runtype.  These
+    build.properties file for the project you can define project.runcodes (comma separated), and project.runtype.  These
     tell the setup-project task to create additional virtualhosts for the different websites / stores configured in Magento.
     In that case the default store will be available at http://projectname.yourhostname.com/ while the other websites will be available
     at http://projectname-runcode.yourhostname.com/.

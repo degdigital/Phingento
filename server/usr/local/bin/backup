@@ -1,9 +1,11 @@
 #!/bin/bash
-# Creates a tarball with the projects current media folder and a database dump
+# Creates a tarball with data and or files from the specified environment
 # Specify one of the following options:
-#   -f Backup Files
+#   -m Backup Media Files
+#   -m Backup Var Files (excluding cache, sessions, and package)
 #   -d Backup Database
-# Example: backup beta -f -d
+#   -s Strip logs and customer data
+# Example: backup beta -f -d -s
 
 if [ -z $1 ]; then
     echo "you must provide the name of the environment to backup"
@@ -14,16 +16,24 @@ fi
 
 shift
 
-FILES=0
+MEDIA=0
+VAR=0
 DATABASE=0
+STRIP_DB=0
 
-while getopts ":df" opt; do
+while getopts ":dmsv" opt; do
     case $opt in
-        f)
-            FILES=1
+        m)
+            MEDIA=1
             ;;
         d)
             DATABASE=1
+            ;;
+        s)
+            STRIP_DB=1
+            ;;
+        v)
+            VAR=1
             ;;
         \?)
             echo "Invalid option: -$OPTARG" >&2
@@ -32,8 +42,8 @@ while getopts ":df" opt; do
     esac
 done
 
-if [[ "$FILES" == 0 && "$DATABASE" == 0 ]]; then
-    echo "Nothing to backup, please specify -f or -d flags"
+if [[ "$MEDIA" == 0 && "$DATABASE" == 0 && "$VAR" == 0 ]]; then
+    echo "Nothing to backup, please specify -m, -v or -d flags"
     exit 1
 fi
 
@@ -46,15 +56,26 @@ if [ -d /tmp/$BACKUP_NAME ]; then
 fi
 mkdir /tmp/$BACKUP_NAME
 
-if [ "$FILES" = "1" ]; then
+if [ "$MEDIA" = "1" ]; then
+    echo "Backing up media"
     cp -arf ~/"$ENVIRONMENT"_media /tmp/$BACKUP_NAME
-    cp ~/$ENVIRONMENT/app/etc/local.xml /tmp/$BACKUP_NAME
 fi
+
+if [ "$VAR" = "1" ]; then
+    echo "Backing up var"
+    rsync -a ~/"$ENVIRONMENT"_var /tmp/$BACKUP_NAME/ --exclude=cache --exclude=full_page_cache --exclude=session --exclude=package
+fi
+
+cp ~/$ENVIRONMENT/app/etc/local.xml /tmp/$BACKUP_NAME
 
 if [ "$DATABASE" = "1" ]; then
     if [[ -x /usr/local/bin/n98-magerun.phar ]]; then
         cd ~/$ENVIRONMENT
-        n98-magerun.phar db:dump /tmp/$BACKUP_NAME/$PROJECT.sql
+        if [ "$STRIP_DB" == "1" ]; then
+            n98-magerun.phar db:dump --strip="@development" /tmp/$BACKUP_NAME/$PROJECT.sql
+        else
+            n98-magerun.phar db:dump /tmp/$BACKUP_NAME/$PROJECT.sql
+        fi
     else
         echo "n98-magerun is missing please install to /usr/local/bin"
         exit 1

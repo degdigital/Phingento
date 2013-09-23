@@ -1,3 +1,20 @@
+Version 2.1
+------------
+
+To Upgrade:
+On all deployment servers update the scripts in usr/local/bin.
+Non-passive changes were made to the backup script arguments.
+
+Changes:
+Now supports javascript compression via Google's closure compiler.
+Deploy now clears the js and css combination cache.
+Backup enhancements: Strip database backups by default, Back up media and var via separate flags.
+Restore backup enhancements: Turn off full page cache, Turn off css and js combination, Remove custom admin urls.
+Additional files can be overwritten in the magento root.
+
+Bugs Fixed:
+Fixed wording on backup prompt.
+
 Version 2.0
 ------------
 

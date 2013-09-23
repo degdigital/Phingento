@@ -66,11 +66,11 @@
             <isset property="deploy.password"/>
             <then>
                 <ssh host="${host_name}" username="${deploy.username}" password="${deploy.password}"
-                command="deploy ${deploy.environment} ${md5hash}" port="${deploy.port}" property="deploy_output"/>
+                command="deploy ${deploy.environment} ${md5hash} 2>&amp;1" port="${deploy.port}" property="deploy_output"/>
             </then>
             <else>
                 <ssh host="${host_name}" username="${deploy.username}" pubkeyfile="${deploy.pubkeyfile}" privkeyfile="${deploy.privkeyfile}"
-                     command="deploy ${deploy.environment} ${md5hash}" port="${deploy.port}" property="deploy_output"/>
+                     command="deploy ${deploy.environment} ${md5hash} 2>&amp;1" port="${deploy.port}" property="deploy_output"/>
             </else>
         </if>
         <if>
@@ -105,27 +105,42 @@
             <equals arg1="${backup.database}" arg2="Y"/>
             <then>
                 <property name="database" value="-d"/>
+                <if>
+                    <equals arg1="${backup.database.strip}" arg2="Y"/>
+                    <then>
+                        <property name="strip" value="-s"/>
+                    </then>
+                </if>
             </then>
         </if>
 
         <if>
-            <equals arg1="${backup.files}" arg2="Y"/>
+            <equals arg1="${backup.media}" arg2="Y"/>
             <then>
-                <property name="files" value="-f"/>
+                <property name="media" value="-m"/>
             </then>
         </if>
+
+        <if>
+            <equals arg1="${backup.var}" arg2="Y"/>
+            <then>
+                <property name="var" value="-v"/>
+            </then>
+        </if>
+
+        <property name="backup_command" value="backup ${deploy.environment} ${database} ${media} ${strip} ${var} 2>&amp;1"/>
 
         <if>
             <isset property="deploy.password"/>
             <then>
                 <ssh host="${deploy.host}" username="${deploy.username}"  password="${deploy.password}"
-                     port="${deploy.port}" command="backup ${deploy.environment} ${database} ${files}"/>
+                     port="${deploy.port}" command="${backup_command}"/>
                 <scp host="${deploy.host}" username="${deploy.username}" password="${deploy.password}"
                      port="${deploy.port}" todir="${backup.dir}" file="/tmp/${project.name}_${deploy.environment}_backup.tar.gz" fetch="true"/>
             </then>
             <else>
                 <ssh host="${deploy.host}" username="${deploy.username}" pubkeyfile="${deploy.pubkeyfile}" privkeyfile="${deploy.privkeyfile}"
-                     port="${deploy.port}" command="backup ${deploy.environment} ${database} ${files}"/>
+                     port="${deploy.port}" command="${backup_command}"/>
                 <scp host="${deploy.host}" username="${deploy.username}" pubkeyfile="${deploy.pubkeyfile}" privkeyfile="${deploy.privkeyfile}"
                      port="${deploy.port}" todir="${backup.dir}" file="/tmp/${project.name}_${deploy.environment}_backup.tar.gz" fetch="true"/>
             </else>
