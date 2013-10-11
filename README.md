@@ -92,6 +92,8 @@ the deploy.environments property in default.properties.
 * __deploy.[environment].compressjs:__ When set to true will use the google closure compiler to compress all core and skin js used
     in the front end of the site.  This will add up to 10 minutes to your build time, but reduces Javascript size by about 50%.
 
+* __deploy.[environment].tag:__ When set to true every deploy will create and push a git tag for each deploy to the environment.
+
 Server Setup
 ------------
 
