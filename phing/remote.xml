@@ -83,8 +83,16 @@
         </if>
     </target>
     <target name="complete_deploy">
-        <gittag repository="${git.local}" name="deployed_${deploy.environment}_${DSTAMP}_${TSTAMP}"/>
-        <gitpush repository="${git.local}" tags="true"/>
+        <if>
+            <and>
+                <isset property="deploy.${deploy.environment}.tag"/>
+                <istrue value="${deploy.${deploy.environment}.tag}"/>
+            </and>
+            <then>
+                <gittag repository="${git.local}" name="deployed_${deploy.environment}_${DSTAMP}_${TSTAMP}"/>
+                <gitpush repository="${git.local}" tags="true"/>
+            </then>
+        </if>
         <delete dir="${temp_path}"/>
     </target>
 
