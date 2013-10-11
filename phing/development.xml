@@ -193,9 +193,17 @@
             <available file="${backup.extracted}/${backup.environment}_media"/>
             <then>
                 <echo message="Copying media"/>
-                <exec command="cp -Rf ${backup.environment}_media/* ${project.magedir}/media" dir="${backup.extracted}" checkreturn="true"/>
-                <exec command="find -type d -exec chmod 777 {} +" dir="${project.magedir}/media" checkreturn="true"/>
-                <exec command="find -type f -exec chmod 666 {} +" dir="${project.magedir}/media" checkreturn="true"/>
+                <if>
+                    <not>
+                        <available file="${project.basedir}/media"/>
+                    </not>
+                    <then>
+                        <mkdir dir="${project.basedir}/media" mode="777"/>
+                    </then>
+                </if>
+                <exec command="cp -Rf ${backup.environment}_media/* ${project.basedir}/media" dir="${backup.extracted}" checkreturn="true"/>
+                <exec command="find -type d -exec chmod 777 {} +" dir="${project.basedir}/media" checkreturn="true"/>
+                <exec command="find -type f -exec chmod 666 {} +" dir="${project.basedir}/media" checkreturn="true"/>
             </then>
         </if>
     </target>
