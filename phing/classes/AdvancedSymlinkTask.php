@@ -11,6 +11,7 @@ class AdvancedSymlinkTask extends SymlinkTask
 
     protected function symlink($target, $link)
     {
+        $originalTarget = $target;
         if ($this->_createParent) {
             $linkParent = dirname($link);
             if (!is_dir($linkParent) && !is_file($linkParent)) {
@@ -23,10 +24,25 @@ class AdvancedSymlinkTask extends SymlinkTask
         }
 
         if ($this->_silentOnExisting) {
-            if (is_file($link) && realpath($link) == $link) {
-                unlink($link);
-            } else if(file_exists($link) && !is_link($link)) {
-                return false;
+            if(file_exists($link)) {
+                if(is_link($link) && is_dir($originalTarget)) {
+                    //resolve symlinks within a symlinked dir correctly
+                    $originalDir = getcwd();
+                    chdir($originalTarget);
+                    foreach(glob('*') as $file)
+                    {
+                        $childTarget = $originalTarget . DIRECTORY_SEPARATOR . $file;
+                        $childLink = realpath($link) . DIRECTORY_SEPARATOR . $file;
+                        unlink($childLink);
+                        $this->symlink($childTarget, $childLink);
+                    }
+                    chdir($originalDir);
+                    return false;
+                } else if (is_file($link) && realpath($link) == $link){
+                    unlink($link); //replace files with symlinks
+                } else {
+                    return false; //don't try to overwrite an existing symlink
+                }
             }
         }
 

@@ -84,7 +84,7 @@
                         <include name="*.patch"/>
                         <include name="*.ico"/>
                         <include name="*.sh"/>
-                        <include name="js/*"/>
+                        <include name="js/*/*"/>
                         <include name="lib/**"/>
                         <include name="shell/*"/>
                         <include name="errors/*"/>
