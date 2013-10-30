@@ -59,12 +59,21 @@
             </then>
         </if>
 
+        <if>
+            <available file="${git.local}/composer.json"/>
+            <then>
+                <phingcall target="composer-install"/>
+            </then>
+        </if>
+
         <copy todir="${temp_path}/magento" overwrite="true" preservelastmodified="true">
             <fileset dir="${git.local}">
                 <exclude name=".git**"/>
                 <exclude name=".idea**"/>
                 <exclude name="build**"/>
                 <exclude name="app/etc/local.xml"/>
+                <exclude name="composer.json"/>
+                <exclude name="composer.lock"/>
                 <exclude name="**.gitignore"/>
                 <exclude name="**/config.rb"/>
                 <exclude name="**/*.scss"/>
@@ -133,5 +142,17 @@
                 <warn message="${scriptPath} could not be compiled"/>
             </catch>
         </trycatch>
+    </target>
+
+    <target name="composer-install">
+        <if>
+            <not><available file="/usr/local/bin/composer.phar"/></not>
+            <then><fail message="Composer not installed to /usr/local/bin"/></then>
+        </if>
+        <echo message="Installing composer dependencies."/>
+        <exec dir="${git.local}" command="composer.phar install" checkreturn="true"/>
+        <echo message="Generating composer classmap."/>
+        <exec dir="${git.local}" command="composer.phar dump-autoload --optimize" checkreturn="true"/>
+        <copy file="${temp_path}/magento/var/.htaccess" todir="${git.local}/vendor"/>
     </target>
 </project>

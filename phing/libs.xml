@@ -3,6 +3,7 @@
     <fail unless="project.magedir" message="The project.magedir property MUST be set"/>
     <fail unless="workspace" message="The workspace property MUST be set"/>
     <fail unless="project.libs.remote" message="The project.libs.remote property MUST be set"/>
+    <taskdef name="composermerge" classname="ComposerMergeTask"/>
 
     <target name="link-libs">
         <phingcall target="include-libs">
@@ -97,12 +98,38 @@
                         <include name="app/design/adminhtml/*/*/*/**"/>
                     </fileset>
                 </advanced-symlink>
+                <property name="composerDir" value="${project.basedir}"/>
             </then>
             <else>
+                <property name="composerDir" value="${temp_path}/git"/>
                 <copy todir="${temp_path}/magento">
-                    <fileset dir="${project.libs.dir}/${library}"/>
+                    <fileset dir="${project.libs.dir}/${library}">
+                        <exclude name="composer.json"/>
+                    </fileset>
                 </copy>
             </else>
+        </if>
+
+        <if>
+            <available file="${project.libs.dir}/${library}/composer.json"/>
+            <then>
+                <if>
+                    <not><available file="${composerDir}/composer.json"/></not>
+                    <then><fail message="${library} has composer dependencies, but you do not yet have composer support in your project" /></then>
+                </if>
+                <filehash file="${composerDir}/composer.json" propertyname="beforeHash"/>
+                <composermerge fromFile="${project.libs.dir}/${library}/composer.json" toFile="${composerDir}/composer.json"/>
+                <filehash file="${composerDir}/composer.json" propertyname="afterHash"/>
+                <if>
+                    <and>
+                        <istrue value="${symlink}"/>
+                        <not><equals arg1="${beforeHash}" arg2="${afterHash}" /></not>
+                    </and>
+                    <then>
+                        <exec dir="${composerDir}" command="composer.phar install" checkreturn="true" logoutput="true"/>
+                    </then>
+                </if>
+            </then>
         </if>
     </target>
 </project>

@@ -8,6 +8,14 @@
         <delete dir="${project.magedir}"/>
         <mkdir dir="${project.magedir}"/>
         <exec dir="${project.magedir}" checkreturn="true" command="tar --strip-components 1 -xf ${magento.archive.file}" logoutput="true"/>
+
+        <if>
+            <available file="${project.basedir}/composer.json"/>
+            <then>
+                <phingcall target="composer-install"/>
+            </then>
+        </if>
+
         <phing buildfile="${libs}" target="link-libs"/>
         <foreach target="apply-patch" param="patch.path" absparam="patch.abspath">
             <fileset dir="${project.basedir}">
@@ -41,7 +49,7 @@
                 <include name="app/design/frontend/*/*/*/**"/>
                 <include name="app/design/adminhtml/*/*/*/**"/>
                 <include name="media"/>
-                <include name="var/session"/>
+                <include name="vendor"/>
                 <include name="robots.txt"/>
                 <include name="lbcheck.html"/>
                 <include name="app/etc/local.xml"/>
@@ -209,6 +217,15 @@
     </target>
 
     <!-- utility targets -->
+    <target name="composer-install">
+        <if>
+            <not><available file="/usr/local/bin/composer.phar"/></not>
+            <then><fail message="Composer not installed to /usr/local/bin"/></then>
+        </if>
+        <echo message="Installing composer dependencies."/>
+        <exec dir="${project.basedir}" command="composer.phar install" checkreturn="true"/>
+    </target>
+
     <target name="apply-patch">
         <patch patchfile="${patch.abspath}" dir="${project.magedir}" strip="0" haltonfailure="true" />
     </target>
