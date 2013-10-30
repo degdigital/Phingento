@@ -19,6 +19,7 @@ Dependencies
 4. [n98-magerun] (https://github.com/netz98/n98-magerun)
 5. [Compass] (http://compass-style.org/) (optional)
 6. [Closure Compiler] (https://developers.google.com/closure/compiler/) (optional)
+7. [Composer] (http://getcomposer.org/) (optional)
 
 Workstation Setup
 -----------------
@@ -49,6 +50,11 @@ Install Closure Compiler (for Javascript compression):
     cd /usr/local/lib/java
     wget http://closure-compiler.googlecode.com/files/compiler-latest.zip
     unzip compiler-latest.zip
+
+Install Composer (for composer dependency management):
+
+    cd /usr/local/bin
+    curl -sS https://getcomposer.org/installer | php
 
 Project Setup
 -------------
