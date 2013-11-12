@@ -13,7 +13,7 @@ Features:
 Dependencies
 ------------
 
-1. [Phing] (http://www.phing.info/trac/wiki/Users/Download)
+1. [Phing] (http://www.phing.info/trac/wiki/Users/Download) > 2.4.10
 2. [VersionControl_Git] (http://pear.php.net/package/VersionControl_Git)
 3. [pecl-ssh2] (http://pecl.php.net/package/ssh2)
 4. [n98-magerun] (https://github.com/netz98/n98-magerun)
